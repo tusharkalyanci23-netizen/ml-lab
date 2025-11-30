@@ -1,0 +1,65 @@
+import numpy as np, pandas as pd
+import matplotlib.pyplot as plt
+import networkx as nx
+!pip install pgmpy
+from pgmpy.models import BayesianNetwork, DiscreteBayesianNetwork 
+from pgmpy.factors.discrete import TabularCPD
+from pgmpy.inference import VariableElimination
+
+model = DiscreteBayesianNetwork([
+    ('Burglary', 'Alarm'),
+    ('Earthquake', 'Alarm'),
+    ('Alarm', 'JohnCalls'),
+    ('Alarm', 'MaryCalls')
+])
+
+cpd_burglary = TabularCPD('Burglary', 2, [[0.001], [0.999]])
+cpd_earthquake = TabularCPD('Earthquake', 2, [[0.002], [0.998]])
+
+cpd_alarm = TabularCPD(
+    'Alarm', 2,
+    [
+        [0.95, 0.94, 0.29, 0.001],
+        [0.05, 0.06, 0.71, 0.999]
+    ],
+    evidence=['Burglary', 'Earthquake'],
+    evidence_card=[2, 2]
+)
+
+cpd_john = TabularCPD(
+    'JohnCalls', 2,
+    [
+        [0.90, 0.05],
+        [0.10, 0.95]
+    ],
+    evidence=['Alarm'],
+    evidence_card=[2]
+)
+
+cpd_mary = TabularCPD(
+    'MaryCalls', 2,
+    [
+        [0.70, 0.01],
+        [0.30, 0.99]
+    ],
+    evidence=['Alarm'],
+    evidence_card=[2]
+)
+
+model.add_cpds(cpd_burglary, cpd_earthquake, cpd_alarm, cpd_john, cpd_mary)
+model.check_model()
+
+infer = VariableElimination(model)
+
+result = infer.query(variables=['Burglary'], evidence={'JohnCalls': 1, 'MaryCalls': 1})
+print(result)
+
+G = nx.DiGraph()
+G.add_edges_from(model.edges())
+
+plt.figure(figsize=(8, 6))
+pos = nx.spring_layout(G, seed=42)
+nx.draw(G, pos, with_labels=True, node_size=3000, node_color="lightblue",
+        edge_color="black", font_size=12, font_weight="bold")
+plt.title("Bayesian Network Structure")
+plt.show()
