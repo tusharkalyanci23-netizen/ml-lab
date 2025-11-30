@@ -1,0 +1,44 @@
+import numpy as np, pandas as pd
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+
+data = load_iris()
+X = data.data
+y = data.target
+feature_names = data.feature_names
+target_names = data.target_names
+
+idx = np.arange(X.shape[0])
+train_idx, test_idx = train_test_split(idx, test_size=0.3, random_state=42, stratify=y)
+
+X_train, X_test = X[train_idx], X[test_idx]
+y_train, y_test = y[train_idx], y[test_idx]
+
+k = 5
+knn = KNeighborsClassifier(n_neighbors=k)
+knn.fit(X_train, y_train)
+y_pred = knn.predict(X_test)
+
+results = pd.DataFrame({
+    'Test_Index': test_idx,
+    'Actual_Label': y_test,
+    'Actual_Name': [target_names[i] for i in y_test],
+    'Predicted_Label': y_pred,
+    'Predicted_Name': [target_names[i] for i in y_pred]
+}).reset_index(drop=True)
+
+correct = results[results.Actual_Label == results.Predicted_Label]
+wrong = results[results.Actual_Label != results.Predicted_Label]
+
+print("Accuracy:", accuracy_score(y_test, y_pred))
+print("\nConfusion Matrix:\n", confusion_matrix(y_test, y_pred))
+print("\nClassification Report:\n", classification_report(y_test, y_pred))
+
+print(f"\nNumber of test samples: {len(results)}")
+print(f"Correct predictions: {len(correct)}")
+print(correct.to_string(index=False))
+
+print(f"\nWrong predictions: {len(wrong)}")
+print(wrong.to_string(index=False))
