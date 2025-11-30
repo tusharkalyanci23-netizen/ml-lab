@@ -1,0 +1,38 @@
+from sklearn.datasets import load_iris
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import BaggingClassifier, VotingClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+from sklearn.svm import SVC
+from sklearn.neighbors import KNeighborsClassifier
+import numpy as np
+
+# Load dataset
+X, y = load_iris(return_X_y=True)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=42)
+
+# Base estimator: single decision tree with some randomness
+base_clf = DecisionTreeClassifier(max_features=0.8, random_state=42)
+
+# 1. Individual classifier
+base_clf.fit(X_train, y_train)
+y_pred_base = base_clf.predict(X_test)
+acc_base = accuracy_score(y_test, y_pred_base)
+
+# 2. Bagging Classifier (with replacement)
+# 2. Bagging Classifier (with replacement)
+bagging_clf = BaggingClassifier(
+    estimator=base_clf,
+    n_estimators=10,
+    max_samples=0.8,
+    bootstrap=True,
+    oob_score=True,
+    random_state=42
+)
+
+bagging_clf.fit(X_train, y_train)
+y_pred_bag = bagging_clf.predict(X_test)
+acc_bag = accuracy_score(y_test, y_pred_bag)
+
+print("Bagging Accuracy:", accuracy_score(y_test, y_pred_bag))
+print("Out-of-Bag Score:", bagging_clf.oob_score_)
