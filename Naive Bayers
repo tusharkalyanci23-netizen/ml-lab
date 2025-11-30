@@ -1,0 +1,49 @@
+import numpy as np, pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.naive_bayes import GaussianNB
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+
+csv_file = "yourfile.csv"
+
+df = pd.read_csv(csv_file)
+label_col = df.columns[-1]
+
+X = df.drop(columns=[label_col])
+y = df[label_col]
+
+cat_cols = X.select_dtypes(include=['object','category']).columns.tolist()
+num_cols = [c for c in X.columns if c not in cat_cols]
+
+preprocessor = ColumnTransformer([
+    ("cat", OneHotEncoder(handle_unknown="ignore", sparse_output=False), cat_cols),
+    ("num", StandardScaler(), num_cols)
+])
+
+model = Pipeline([
+    ("prep", preprocessor),
+    ("clf", GaussianNB())
+])
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.3, random_state=42, stratify=y
+)
+
+model.fit(X_train, y_train)
+y_pred = model.predict(X_test)
+
+print("Accuracy:", accuracy_score(y_test, y_pred))
+print(confusion_matrix(y_test, y_pred))
+print(classification_report(y_test, y_pred))
+
+results = pd.DataFrame({"Actual": y_test.values, "Predicted": y_pred}).reset_index(drop=True)
+correct = results[results.Actual == results.Predicted]
+wrong = results[results.Actual != results.Predicted]
+
+print("\nCorrect Predictions:")
+print(correct.to_string(index=False))
+
+print("\nWrong Predictions:")
+print(wrong.to_string(index=False))
