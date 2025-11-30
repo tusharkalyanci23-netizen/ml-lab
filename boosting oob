@@ -1,0 +1,31 @@
+import numpy as np
+from sklearn.datasets import load_iris
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import BaggingClassifier
+from sklearn.metrics import accuracy_score
+
+data = load_iris()
+X, y = data.data, data.target
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.3, random_state=42, stratify=y
+)
+
+dt = DecisionTreeClassifier(random_state=42)
+dt.fit(X_train, y_train)
+dt_pred = dt.predict(X_test)
+
+bag = BaggingClassifier(
+    estimator=DecisionTreeClassifier(),
+    n_estimators=50,
+    bootstrap=True,
+    oob_score=True,
+    random_state=42
+)
+bag.fit(X_train, y_train)
+bag_pred = bag.predict(X_test)
+
+print("Decision Tree Accuracy:", accuracy_score(y_test, dt_pred))
+print("Bagging Accuracy:", accuracy_score(y_test, bag_pred))
+print("Bagging OOB Score:", bag.oob_score_)
